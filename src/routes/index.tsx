@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { fetchTasksFromSheet } from "@/utils/sheets.functions";
 import {
   ChevronLeft,
   ChevronRight,
@@ -108,6 +109,36 @@ function CalendarView() {
   const [selected, setSelected] = useState<Date>(today);
   const [tasks, setTasks] = useState<Task[]>(() => buildSeedTasks(today));
   const [filter, setFilter] = useState<"all" | Priority>("all");
+  const [sheetStatus, setSheetStatus] = useState<"idle" | "loading" | "synced" | "not-configured" | "error">("idle");
+  const [sheetError, setSheetError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSheetStatus("loading");
+    fetchTasksFromSheet()
+      .then((res) => {
+        if (cancelled) return;
+        if (!res.configured) {
+          setSheetStatus("not-configured");
+          return;
+        }
+        if (res.error) {
+          setSheetStatus("error");
+          setSheetError(res.error);
+          return;
+        }
+        if (res.tasks.length > 0) setTasks(res.tasks);
+        setSheetStatus("synced");
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setSheetStatus("error");
+        setSheetError(err instanceof Error ? err.message : "Unknown error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const monthLabel = `${MONTHS[cursor.getMonth()]} ${cursor.getFullYear()}`;
 
@@ -197,6 +228,7 @@ function CalendarView() {
           </div>
 
           <div className="flex items-center gap-2">
+            <SheetStatusBadge status={sheetStatus} error={sheetError} />
             <div className="hidden gap-1 rounded-lg border border-border bg-card p-1 md:flex">
               {(["all", "high", "medium", "low"] as const).map((f) => (
                 <button
@@ -431,5 +463,32 @@ function StatCard({
       </div>
       <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
     </div>
+  );
+}
+
+function SheetStatusBadge({
+  status,
+  error,
+}: {
+  status: "idle" | "loading" | "synced" | "not-configured" | "error";
+  error: string | null;
+}) {
+  if (status === "idle" || status === "not-configured") return null;
+  const map = {
+    loading: { label: "Syncing…", cls: "bg-muted text-muted-foreground" },
+    synced: { label: "Sheet synced", cls: "bg-chart-2/10 text-chart-2 border-chart-2/20" },
+    error: { label: "Sheet error", cls: "bg-destructive/10 text-destructive border-destructive/20" },
+  } as const;
+  const v = map[status as "loading" | "synced" | "error"];
+  return (
+    <span
+      title={error ?? undefined}
+      className={cn(
+        "hidden md:inline-flex items-center rounded-md border border-transparent px-2 py-1 text-[10px] font-medium",
+        v.cls,
+      )}
+    >
+      {v.label}
+    </span>
   );
 }
