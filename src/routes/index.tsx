@@ -109,6 +109,36 @@ function CalendarView() {
   const [selected, setSelected] = useState<Date>(today);
   const [tasks, setTasks] = useState<Task[]>(() => buildSeedTasks(today));
   const [filter, setFilter] = useState<"all" | Priority>("all");
+  const [sheetStatus, setSheetStatus] = useState<"idle" | "loading" | "synced" | "not-configured" | "error">("idle");
+  const [sheetError, setSheetError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSheetStatus("loading");
+    fetchTasksFromSheet()
+      .then((res) => {
+        if (cancelled) return;
+        if (!res.configured) {
+          setSheetStatus("not-configured");
+          return;
+        }
+        if (res.error) {
+          setSheetStatus("error");
+          setSheetError(res.error);
+          return;
+        }
+        if (res.tasks.length > 0) setTasks(res.tasks);
+        setSheetStatus("synced");
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setSheetStatus("error");
+        setSheetError(err instanceof Error ? err.message : "Unknown error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const monthLabel = `${MONTHS[cursor.getMonth()]} ${cursor.getFullYear()}`;
 
