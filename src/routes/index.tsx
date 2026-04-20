@@ -465,3 +465,30 @@ function StatCard({
     </div>
   );
 }
+
+function SheetStatusBadge({
+  status,
+  error,
+}: {
+  status: "idle" | "loading" | "synced" | "not-configured" | "error";
+  error: string | null;
+}) {
+  if (status === "idle" || status === "not-configured") return null;
+  const map = {
+    loading: { label: "Syncing…", cls: "bg-muted text-muted-foreground" },
+    synced: { label: "Sheet synced", cls: "bg-chart-2/10 text-chart-2 border-chart-2/20" },
+    error: { label: "Sheet error", cls: "bg-destructive/10 text-destructive border-destructive/20" },
+  } as const;
+  const v = map[status as "loading" | "synced" | "error"];
+  return (
+    <span
+      title={error ?? undefined}
+      className={cn(
+        "hidden md:inline-flex items-center rounded-md border border-transparent px-2 py-1 text-[10px] font-medium",
+        v.cls,
+      )}
+    >
+      {v.label}
+    </span>
+  );
+}
