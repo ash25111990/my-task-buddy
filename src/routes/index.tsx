@@ -228,6 +228,7 @@ function CalendarView() {
           </div>
 
           <div className="flex items-center gap-2">
+            <SheetStatusBadge status={sheetStatus} error={sheetError} />
             <div className="hidden gap-1 rounded-lg border border-border bg-card p-1 md:flex">
               {(["all", "high", "medium", "low"] as const).map((f) => (
                 <button
