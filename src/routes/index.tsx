@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { fetchTasksFromSheet } from "@/utils/sheets.functions";
 import {
   ChevronLeft,
   ChevronRight,
