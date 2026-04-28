@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 /**
- * Reads tasks from a Google Sheet using a service account.
+ * Google Sheets integration — reads tasks from a shared admin sheet using a service account.
  *
  * Required env vars (add via Lovable secrets when ready):
  *   - GOOGLE_SHEETS_ID                  -> the spreadsheet ID from the sheet URL
