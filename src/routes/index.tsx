@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { fetchTasksFromSheet } from "@/utils/sheets.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   ChevronLeft,
   ChevronRight,
@@ -81,63 +82,41 @@ function sameDay(a: Date, b: Date) {
   );
 }
 
-function buildSeedTasks(reference: Date): Task[] {
-  const y = reference.getFullYear();
-  const m = reference.getMonth();
-  const mk = (day: number) => toKey(new Date(y, m, day));
-  return [
-    { id: "1", title: "Design review with team", date: mk(3), time: "10:00", priority: "high", category: "Work", done: false },
-    { id: "2", title: "Submit quarterly report", date: mk(5), time: "17:00", priority: "high", category: "Work", done: false },
-    { id: "3", title: "Gym session", date: mk(5), time: "07:00", priority: "low", category: "Health", done: true },
-    { id: "4", title: "Call with investor", date: mk(8), time: "14:30", priority: "high", category: "Work", done: false },
-    { id: "5", title: "Grocery shopping", date: mk(8), priority: "low", category: "Personal", done: false },
-    { id: "6", title: "Finish onboarding doc", date: mk(12), time: "12:00", priority: "medium", category: "Work", done: false },
-    { id: "7", title: "Dentist appointment", date: mk(15), time: "09:30", priority: "medium", category: "Health", done: false },
-    { id: "8", title: "Team retrospective", date: mk(15), time: "15:00", priority: "medium", category: "Work", done: false },
-    { id: "9", title: "Book flight tickets", date: mk(18), priority: "medium", category: "Personal", done: false },
-    { id: "10", title: "Publish blog post", date: mk(20), time: "11:00", priority: "low", category: "Work", done: false },
-    { id: "11", title: "Monthly budget review", date: mk(22), priority: "medium", category: "Personal", done: false },
-    { id: "12", title: "Client presentation", date: mk(25), time: "13:00", priority: "high", category: "Work", done: false },
-    { id: "13", title: "Yoga class", date: mk(25), time: "18:00", priority: "low", category: "Health", done: false },
-    { id: "14", title: "Plan next sprint", date: mk(28), time: "10:00", priority: "medium", category: "Work", done: false },
-  ];
-}
-
 function CalendarView() {
   const today = new Date();
+  const navigate = useNavigate();
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState<Date>(today);
-  const [tasks, setTasks] = useState<Task[]>(() => buildSeedTasks(today));
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<"all" | Priority>("all");
-  const [sheetStatus, setSheetStatus] = useState<"idle" | "loading" | "synced" | "not-configured" | "error">("idle");
-  const [sheetError, setSheetError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadTasks = async () => {
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("*")
+      .order("date", { ascending: true });
+    if (error) {
+      toast.error(error.message);
+      setLoading(false);
+      return;
+    }
+    setTasks(
+      (data ?? []).map((t) => ({
+        id: t.id,
+        title: t.title,
+        date: t.date,
+        time: t.time ?? undefined,
+        priority: t.priority as Priority,
+        category: t.category,
+        done: t.done,
+      })),
+    );
+    setLoading(false);
+  };
 
   useEffect(() => {
-    let cancelled = false;
-    setSheetStatus("loading");
-    fetchTasksFromSheet()
-      .then((res) => {
-        if (cancelled) return;
-        if (!res.configured) {
-          setSheetStatus("not-configured");
-          return;
-        }
-        if (res.error) {
-          setSheetStatus("error");
-          setSheetError(res.error);
-          return;
-        }
-        if (res.tasks.length > 0) setTasks(res.tasks);
-        setSheetStatus("synced");
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setSheetStatus("error");
-        setSheetError(err instanceof Error ? err.message : "Unknown error");
-      });
-    return () => {
-      cancelled = true;
-    };
+    loadTasks();
   }, []);
 
   const monthLabel = `${MONTHS[cursor.getMonth()]} ${cursor.getFullYear()}`;
@@ -189,24 +168,21 @@ function CalendarView() {
     setSelected(t);
   };
 
-  const toggleDone = (id: string) =>
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
-
-  const addQuickTask = () => {
-    const title = prompt("New task for " + selected.toDateString());
-    if (!title) return;
-    setTasks((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        title,
-        date: toKey(selected),
-        priority: "medium",
-        category: "Personal",
-        done: false,
-      },
-    ]);
+  const toggleDone = async (id: string) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    const next = !task.done;
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: next } : t)));
+    const { error } = await supabase.from("tasks").update({ done: next }).eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: !next } : t)));
+    }
   };
+
+  const goToNewTask = () => navigate({ to: "/tasks/new" });
+  const goToEditTask = (id: string) =>
+    navigate({ to: "/tasks/$taskId/edit", params: { taskId: id } });
 
   return (
     <div className="min-h-screen bg-background">
