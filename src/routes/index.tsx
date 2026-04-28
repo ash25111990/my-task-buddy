@@ -204,7 +204,7 @@ function CalendarView() {
           </div>
 
           <div className="flex items-center gap-2">
-            <SheetStatusBadge status={sheetStatus} error={sheetError} />
+            {loading && <span className="text-xs text-muted-foreground">Loading…</span>}
             <div className="hidden gap-1 rounded-lg border border-border bg-card p-1 md:flex">
               {(["all", "high", "medium", "low"] as const).map((f) => (
                 <button
@@ -224,7 +224,7 @@ function CalendarView() {
             <Button variant="outline" size="sm" className="md:hidden">
               <Filter className="h-4 w-4" />
             </Button>
-            <Button onClick={addQuickTask} size="sm">
+            <Button onClick={goToNewTask} size="sm">
               <Plus className="mr-1.5 h-4 w-4" /> New task
             </Button>
           </div>
@@ -342,7 +342,7 @@ function CalendarView() {
                   {selectedTasks.length} task{selectedTasks.length === 1 ? "" : "s"}
                 </p>
               </div>
-              <Button size="icon" variant="outline" onClick={addQuickTask} aria-label="Add task">
+              <Button size="icon" variant="outline" onClick={goToNewTask} aria-label="Add task">
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -377,10 +377,14 @@ function CalendarView() {
                       <Circle className="h-5 w-5" />
                     )}
                   </button>
-                  <div className="min-w-0 flex-1">
+                  <button
+                    type="button"
+                    onClick={() => goToEditTask(t.id)}
+                    className="min-w-0 flex-1 text-left"
+                  >
                     <p
                       className={cn(
-                        "text-sm font-medium text-foreground",
+                        "text-sm font-medium text-foreground hover:underline",
                         t.done && "line-through",
                       )}
                     >
@@ -398,7 +402,7 @@ function CalendarView() {
                       </Badge>
                       <span className="text-xs text-muted-foreground">{t.category}</span>
                     </div>
-                  </div>
+                  </button>
                 </div>
               ))}
             </div>
