@@ -9,10 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TasksNewRouteImport } from './routes/tasks.new'
 import { Route as TasksTaskIdEditRouteImport } from './routes/tasks.$taskId.edit'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -31,36 +37,47 @@ const TasksTaskIdEditRoute = TasksTaskIdEditRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/tasks/new': typeof TasksNewRoute
   '/tasks/$taskId/edit': typeof TasksTaskIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/tasks/new': typeof TasksNewRoute
   '/tasks/$taskId/edit': typeof TasksTaskIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/tasks/new': typeof TasksNewRoute
   '/tasks/$taskId/edit': typeof TasksTaskIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/tasks/new' | '/tasks/$taskId/edit'
+  fullPaths: '/' | '/login' | '/tasks/new' | '/tasks/$taskId/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/tasks/new' | '/tasks/$taskId/edit'
-  id: '__root__' | '/' | '/tasks/new' | '/tasks/$taskId/edit'
+  to: '/' | '/login' | '/tasks/new' | '/tasks/$taskId/edit'
+  id: '__root__' | '/' | '/login' | '/tasks/new' | '/tasks/$taskId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
   TasksNewRoute: typeof TasksNewRoute
   TasksTaskIdEditRoute: typeof TasksTaskIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
   TasksNewRoute: TasksNewRoute,
   TasksTaskIdEditRoute: TasksTaskIdEditRoute,
 }
