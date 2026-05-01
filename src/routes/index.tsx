@@ -12,13 +12,20 @@ import {
   Clock,
   Flag,
   Filter,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { RequireAuth } from "@/components/RequireAuth";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/")({
-  component: CalendarView,
+  component: () => (
+    <RequireAuth>
+      <CalendarView />
+    </RequireAuth>
+  ),
 });
 
 type Priority = "low" | "medium" | "high";
@@ -85,11 +92,17 @@ function sameDay(a: Date, b: Date) {
 function CalendarView() {
   const today = new Date();
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState<Date>(today);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<"all" | Priority>("all");
   const [loading, setLoading] = useState(true);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate({ to: "/login" });
+  };
 
   const loadTasks = async () => {
     const { data, error } = await supabase
@@ -226,6 +239,9 @@ function CalendarView() {
             </Button>
             <Button onClick={goToNewTask} size="sm">
               <Plus className="mr-1.5 h-4 w-4" /> New task
+            </Button>
+            <Button onClick={handleSignOut} size="sm" variant="outline" aria-label="Sign out">
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </header>
