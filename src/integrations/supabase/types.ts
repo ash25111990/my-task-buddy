@@ -14,12 +14,40 @@ export type Database = {
   }
   public: {
     Tables: {
+      facebook_connections: {
+        Row: {
+          created_at: string
+          page_access_token: string
+          page_id: string
+          page_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          page_access_token: string
+          page_id: string
+          page_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          page_access_token?: string
+          page_id?: string
+          page_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           category: string
           created_at: string
           date: string
           done: boolean
+          fb_post_id: string | null
           id: string
           priority: string
           time: string | null
@@ -31,6 +59,7 @@ export type Database = {
           created_at?: string
           date: string
           done?: boolean
+          fb_post_id?: string | null
           id?: string
           priority?: string
           time?: string | null
@@ -42,6 +71,7 @@ export type Database = {
           created_at?: string
           date?: string
           done?: boolean
+          fb_post_id?: string | null
           id?: string
           priority?: string
           time?: string | null

@@ -13,12 +13,16 @@ import {
   Flag,
   Filter,
   LogOut,
+  Settings,
+  Facebook,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/hooks/useAuth";
+import { useServerFn } from "@tanstack/react-start";
+import { postTaskToFacebook } from "@/server/facebook.functions";
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -38,6 +42,7 @@ type Task = {
   priority: Priority;
   category: string;
   done: boolean;
+  fbPostId?: string | null;
 };
 
 const MONTHS = [
@@ -98,10 +103,35 @@ function CalendarView() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<"all" | Priority>("all");
   const [loading, setLoading] = useState(true);
+  const [postingId, setPostingId] = useState<string | null>(null);
+  const postTaskToFb = useServerFn(postTaskToFacebook);
 
   const handleSignOut = async () => {
     await signOut();
     navigate({ to: "/login" });
+  };
+
+  const handlePostToFacebook = async (taskId: string) => {
+    setPostingId(taskId);
+    try {
+      const res = await postTaskToFb({ data: { taskId } });
+      toast.success(res.updated ? "Updated on Facebook" : "Posted to Facebook");
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId ? { ...t, fbPostId: res.postId ?? t.fbPostId } : t,
+        ),
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to post";
+      if (/not connected/i.test(msg)) {
+        toast.error("Connect Facebook in Settings first");
+        navigate({ to: "/settings" });
+      } else {
+        toast.error(msg);
+      }
+    } finally {
+      setPostingId(null);
+    }
   };
 
   const loadTasks = async () => {
@@ -123,6 +153,7 @@ function CalendarView() {
         priority: t.priority as Priority,
         category: t.category,
         done: t.done,
+        fbPostId: (t as { fb_post_id?: string | null }).fb_post_id ?? null,
       })),
     );
     setLoading(false);
@@ -239,6 +270,14 @@ function CalendarView() {
             </Button>
             <Button onClick={goToNewTask} size="sm">
               <Plus className="mr-1.5 h-4 w-4" /> New task
+            </Button>
+            <Button
+              onClick={() => navigate({ to: "/settings" })}
+              size="sm"
+              variant="outline"
+              aria-label="Settings"
+            >
+              <Settings className="h-4 w-4" />
             </Button>
             <Button onClick={handleSignOut} size="sm" variant="outline" aria-label="Sign out">
               <LogOut className="h-4 w-4" />
@@ -418,6 +457,21 @@ function CalendarView() {
                       </Badge>
                       <span className="text-xs text-muted-foreground">{t.category}</span>
                     </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handlePostToFacebook(t.id)}
+                    disabled={postingId === t.id}
+                    title={t.fbPostId ? "Update on Facebook" : "Post to Facebook"}
+                    aria-label={t.fbPostId ? "Update on Facebook" : "Post to Facebook"}
+                    className={cn(
+                      "mt-0.5 shrink-0 rounded-md p-1.5 transition-colors disabled:opacity-50",
+                      t.fbPostId
+                        ? "text-[#1877F2] hover:bg-[#1877F2]/10"
+                        : "text-muted-foreground hover:text-[#1877F2] hover:bg-[#1877F2]/10",
+                    )}
+                  >
+                    <Facebook className="h-4 w-4" />
                   </button>
                 </div>
               ))}
