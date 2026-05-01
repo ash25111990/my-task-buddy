@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { TaskForm, TaskFormValues } from "@/components/TaskForm";
 import { supabase } from "@/integrations/supabase/client";
+import { RequireAuth } from "@/components/RequireAuth";
 
 export const Route = createFileRoute("/tasks/$taskId/edit")({
   head: () => ({
@@ -11,7 +12,11 @@ export const Route = createFileRoute("/tasks/$taskId/edit")({
       { name: "description", content: "Edit an existing calendar task." },
     ],
   }),
-  component: EditTaskPage,
+  component: () => (
+    <RequireAuth>
+      <EditTaskPage />
+    </RequireAuth>
+  ),
   errorComponent: ({ error, reset }) => {
     const router = useRouter();
     return (
