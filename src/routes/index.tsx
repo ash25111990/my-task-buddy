@@ -458,6 +458,21 @@ function CalendarView() {
                       <span className="text-xs text-muted-foreground">{t.category}</span>
                     </div>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => handlePostToFacebook(t.id)}
+                    disabled={postingId === t.id}
+                    title={t.fbPostId ? "Update on Facebook" : "Post to Facebook"}
+                    aria-label={t.fbPostId ? "Update on Facebook" : "Post to Facebook"}
+                    className={cn(
+                      "mt-0.5 shrink-0 rounded-md p-1.5 transition-colors disabled:opacity-50",
+                      t.fbPostId
+                        ? "text-[#1877F2] hover:bg-[#1877F2]/10"
+                        : "text-muted-foreground hover:text-[#1877F2] hover:bg-[#1877F2]/10",
+                    )}
+                  >
+                    <Facebook className="h-4 w-4" />
+                  </button>
                 </div>
               ))}
             </div>
