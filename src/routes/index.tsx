@@ -42,6 +42,7 @@ type Task = {
   priority: Priority;
   category: string;
   done: boolean;
+  fbPostId?: string | null;
 };
 
 const MONTHS = [
@@ -127,6 +128,7 @@ function CalendarView() {
         priority: t.priority as Priority,
         category: t.category,
         done: t.done,
+        fbPostId: (t as { fb_post_id?: string | null }).fb_post_id ?? null,
       })),
     );
     setLoading(false);
