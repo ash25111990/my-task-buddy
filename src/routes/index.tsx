@@ -13,12 +13,16 @@ import {
   Flag,
   Filter,
   LogOut,
+  Settings,
+  Facebook,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/hooks/useAuth";
+import { useServerFn } from "@tanstack/react-start";
+import { postTaskToFacebook } from "@/server/facebook.functions";
 
 export const Route = createFileRoute("/")({
   component: () => (
