@@ -103,10 +103,35 @@ function CalendarView() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<"all" | Priority>("all");
   const [loading, setLoading] = useState(true);
+  const [postingId, setPostingId] = useState<string | null>(null);
+  const postTaskToFb = useServerFn(postTaskToFacebook);
 
   const handleSignOut = async () => {
     await signOut();
     navigate({ to: "/login" });
+  };
+
+  const handlePostToFacebook = async (taskId: string) => {
+    setPostingId(taskId);
+    try {
+      const res = await postTaskToFb({ data: { taskId } });
+      toast.success(res.updated ? "Updated on Facebook" : "Posted to Facebook");
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId ? { ...t, fbPostId: res.postId ?? t.fbPostId } : t,
+        ),
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to post";
+      if (/not connected/i.test(msg)) {
+        toast.error("Connect Facebook in Settings first");
+        navigate({ to: "/settings" });
+      } else {
+        toast.error(msg);
+      }
+    } finally {
+      setPostingId(null);
+    }
   };
 
   const loadTasks = async () => {
