@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { TaskForm } from "@/components/TaskForm";
+import { RequireAuth } from "@/components/RequireAuth";
 
 export const Route = createFileRoute("/tasks/new")({
   head: () => ({
@@ -9,7 +10,11 @@ export const Route = createFileRoute("/tasks/new")({
       { name: "description", content: "Create a new calendar task." },
     ],
   }),
-  component: NewTaskPage,
+  component: () => (
+    <RequireAuth>
+      <NewTaskPage />
+    </RequireAuth>
+  ),
 });
 
 function NewTaskPage() {
