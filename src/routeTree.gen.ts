@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TasksNewRouteImport } from './routes/tasks.new'
 import { Route as TasksTaskIdEditRouteImport } from './routes/tasks.$taskId.edit'
+import { Route as ApiPublicFacebookCallbackRouteImport } from './routes/api/public/facebook.callback'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -34,18 +35,26 @@ const TasksTaskIdEditRoute = TasksTaskIdEditRouteImport.update({
   path: '/tasks/$taskId/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicFacebookCallbackRoute =
+  ApiPublicFacebookCallbackRouteImport.update({
+    id: '/api/public/facebook/callback',
+    path: '/api/public/facebook/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/tasks/new': typeof TasksNewRoute
   '/tasks/$taskId/edit': typeof TasksTaskIdEditRoute
+  '/api/public/facebook/callback': typeof ApiPublicFacebookCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/tasks/new': typeof TasksNewRoute
   '/tasks/$taskId/edit': typeof TasksTaskIdEditRoute
+  '/api/public/facebook/callback': typeof ApiPublicFacebookCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +62,30 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/tasks/new': typeof TasksNewRoute
   '/tasks/$taskId/edit': typeof TasksTaskIdEditRoute
+  '/api/public/facebook/callback': typeof ApiPublicFacebookCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/tasks/new' | '/tasks/$taskId/edit'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/tasks/new'
+    | '/tasks/$taskId/edit'
+    | '/api/public/facebook/callback'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/tasks/new' | '/tasks/$taskId/edit'
-  id: '__root__' | '/' | '/login' | '/tasks/new' | '/tasks/$taskId/edit'
+  to:
+    | '/'
+    | '/login'
+    | '/tasks/new'
+    | '/tasks/$taskId/edit'
+    | '/api/public/facebook/callback'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/tasks/new'
+    | '/tasks/$taskId/edit'
+    | '/api/public/facebook/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +93,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   TasksNewRoute: typeof TasksNewRoute
   TasksTaskIdEditRoute: typeof TasksTaskIdEditRoute
+  ApiPublicFacebookCallbackRoute: typeof ApiPublicFacebookCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +126,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TasksTaskIdEditRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/facebook/callback': {
+      id: '/api/public/facebook/callback'
+      path: '/api/public/facebook/callback'
+      fullPath: '/api/public/facebook/callback'
+      preLoaderRoute: typeof ApiPublicFacebookCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +141,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   TasksNewRoute: TasksNewRoute,
   TasksTaskIdEditRoute: TasksTaskIdEditRoute,
+  ApiPublicFacebookCallbackRoute: ApiPublicFacebookCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
