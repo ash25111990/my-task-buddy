@@ -271,6 +271,14 @@ function CalendarView() {
             <Button onClick={goToNewTask} size="sm">
               <Plus className="mr-1.5 h-4 w-4" /> New task
             </Button>
+            <Button
+              onClick={() => navigate({ to: "/settings" })}
+              size="sm"
+              variant="outline"
+              aria-label="Settings"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
             <Button onClick={handleSignOut} size="sm" variant="outline" aria-label="Sign out">
               <LogOut className="h-4 w-4" />
             </Button>
