@@ -16,46 +16,28 @@ export const getFacebookConnection = createServerFn({ method: "GET" })
     return { connection: data };
   });
 
-const saveSchema = z.object({
-  appId: z.string().trim().min(1, "App ID required").max(64),
-  appSecret: z.string().trim().min(1, "App Secret required").max(128),
-  pageId: z.string().trim().min(1, "Page ID required").max(64),
-  pageAccessToken: z.string().trim().min(10, "Page Access Token required").max(2048),
-  pageName: z.string().trim().max(120).optional().nullable(),
+const credsSchema = z.object({
+  appId: z.string().trim().min(1).max(64).regex(/^\d+$/, "App ID must be numeric"),
+  appSecret: z.string().trim().min(10).max(128),
 });
 
-export const saveFacebookConnection = createServerFn({ method: "POST" })
+// Save just the App ID + Secret. Page token is acquired during OAuth callback.
+export const saveFacebookApp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => saveSchema.parse(d))
+  .inputValidator((d: unknown) => credsSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-
-    // Validate the token by hitting the Graph API for the page
-    const verify = await fetch(
-      `${GRAPH}/${data.pageId}?fields=id,name&access_token=${encodeURIComponent(data.pageAccessToken)}`,
-    );
-    const verifyJson = (await verify.json()) as {
-      id?: string;
-      name?: string;
-      error?: { message: string };
-    };
-    if (!verify.ok || verifyJson.error || !verifyJson.id) {
-      throw new Error(
-        verifyJson.error?.message ??
-          "Could not verify Page credentials. Check the Page ID and Access Token.",
-      );
-    }
-
     const { error } = await supabase.from("facebook_connections").upsert({
       user_id: userId,
       app_id: data.appId,
       app_secret: data.appSecret,
-      page_id: data.pageId,
-      page_access_token: data.pageAccessToken,
-      page_name: data.pageName?.trim() || verifyJson.name || null,
+      // placeholders until OAuth completes
+      page_id: "",
+      page_access_token: "",
+      page_name: null,
     });
     if (error) throw new Error(error.message);
-    return { ok: true, pageName: verifyJson.name };
+    return { ok: true };
   });
 
 export const disconnectFacebook = createServerFn({ method: "POST" })
@@ -91,7 +73,9 @@ export const postTaskToFacebook = createServerFn({ method: "POST" })
       .select("page_id, page_access_token")
       .maybeSingle();
     if (cErr) throw new Error(cErr.message);
-    if (!conn) throw new Error("Facebook is not connected");
+    if (!conn || !conn.page_id || !conn.page_access_token) {
+      throw new Error("Facebook is not connected");
+    }
 
     const status = task.done ? "✅ Completed" : "🗓️ Task";
     const when = task.time ? `${task.date} at ${task.time}` : task.date;
