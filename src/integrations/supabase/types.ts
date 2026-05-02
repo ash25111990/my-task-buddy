@@ -16,26 +16,32 @@ export type Database = {
     Tables: {
       facebook_connections: {
         Row: {
+          app_id: string | null
+          app_secret: string | null
           created_at: string
           page_access_token: string
           page_id: string
-          page_name: string
+          page_name: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          app_id?: string | null
+          app_secret?: string | null
           created_at?: string
           page_access_token: string
           page_id: string
-          page_name: string
+          page_name?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          app_id?: string | null
+          app_secret?: string | null
           created_at?: string
           page_access_token?: string
           page_id?: string
-          page_name?: string
+          page_name?: string | null
           updated_at?: string
           user_id?: string
         }
