@@ -10,10 +10,52 @@ export const getFacebookConnection = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data, error } = await supabase
       .from("facebook_connections")
-      .select("page_id, page_name, updated_at")
+      .select("page_id, page_name, app_id, updated_at")
       .maybeSingle();
     if (error) throw new Error(error.message);
     return { connection: data };
+  });
+
+const saveSchema = z.object({
+  appId: z.string().trim().min(1, "App ID required").max(64),
+  appSecret: z.string().trim().min(1, "App Secret required").max(128),
+  pageId: z.string().trim().min(1, "Page ID required").max(64),
+  pageAccessToken: z.string().trim().min(10, "Page Access Token required").max(2048),
+  pageName: z.string().trim().max(120).optional().nullable(),
+});
+
+export const saveFacebookConnection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => saveSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    // Validate the token by hitting the Graph API for the page
+    const verify = await fetch(
+      `${GRAPH}/${data.pageId}?fields=id,name&access_token=${encodeURIComponent(data.pageAccessToken)}`,
+    );
+    const verifyJson = (await verify.json()) as {
+      id?: string;
+      name?: string;
+      error?: { message: string };
+    };
+    if (!verify.ok || verifyJson.error || !verifyJson.id) {
+      throw new Error(
+        verifyJson.error?.message ??
+          "Could not verify Page credentials. Check the Page ID and Access Token.",
+      );
+    }
+
+    const { error } = await supabase.from("facebook_connections").upsert({
+      user_id: userId,
+      app_id: data.appId,
+      app_secret: data.appSecret,
+      page_id: data.pageId,
+      page_access_token: data.pageAccessToken,
+      page_name: data.pageName?.trim() || verifyJson.name || null,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true, pageName: verifyJson.name };
   });
 
 export const disconnectFacebook = createServerFn({ method: "POST" })
