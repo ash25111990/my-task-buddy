@@ -83,28 +83,39 @@ export const postTaskToFacebook = createServerFn({ method: "POST" })
     const message = `${status}: ${task.title}\n📅 ${when}\n🏷️ ${task.category} • Priority: ${task.priority}`;
 
     const isUpdate = Boolean(task.fb_post_id);
+    const hasImage = Boolean(task.image_url) && !isUpdate;
+
     const url = isUpdate
       ? `${GRAPH}/${task.fb_post_id}`
-      : `${GRAPH}/${conn.page_id}/feed`;
+      : hasImage
+        ? `${GRAPH}/${conn.page_id}/photos`
+        : `${GRAPH}/${conn.page_id}/feed`;
 
     const body = new URLSearchParams({
-      message,
       access_token: conn.page_access_token,
     });
+    if (hasImage) {
+      body.set("url", task.image_url as string);
+      body.set("caption", message);
+    } else {
+      body.set("message", message);
+    }
 
     const res = await fetch(url, { method: "POST", body });
-    const json = (await res.json()) as { id?: string; error?: { message: string } };
+    const json = (await res.json()) as { id?: string; post_id?: string; error?: { message: string } };
     if (!res.ok || json.error) {
       throw new Error(json.error?.message ?? `Facebook API error (${res.status})`);
     }
 
-    if (!isUpdate && json.id) {
+    const newPostId = json.post_id ?? json.id;
+
+    if (!isUpdate && newPostId) {
       const { error: uErr } = await supabase
         .from("tasks")
-        .update({ fb_post_id: json.id })
+        .update({ fb_post_id: newPostId })
         .eq("id", task.id);
       if (uErr) throw new Error(uErr.message);
     }
 
-    return { ok: true, postId: json.id ?? task.fb_post_id, updated: isUpdate };
+    return { ok: true, postId: newPostId ?? task.fb_post_id, updated: isUpdate };
   });

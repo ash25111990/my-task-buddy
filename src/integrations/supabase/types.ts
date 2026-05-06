@@ -55,6 +55,7 @@ export type Database = {
           done: boolean
           fb_post_id: string | null
           id: string
+          image_url: string | null
           priority: string
           time: string | null
           title: string
@@ -68,6 +69,7 @@ export type Database = {
           done?: boolean
           fb_post_id?: string | null
           id?: string
+          image_url?: string | null
           priority?: string
           time?: string | null
           title: string
@@ -81,6 +83,7 @@ export type Database = {
           done?: boolean
           fb_post_id?: string | null
           id?: string
+          image_url?: string | null
           priority?: string
           time?: string | null
           title?: string

@@ -21,6 +21,7 @@ export type TaskFormValues = {
   priority: "low" | "medium" | "high";
   category: string;
   done: boolean;
+  image_url?: string | null;
 };
 
 export function TaskForm({ initial }: { initial?: TaskFormValues }) {
@@ -34,9 +35,41 @@ export function TaskForm({ initial }: { initial?: TaskFormValues }) {
       priority: "medium",
       category: "General",
       done: false,
+      image_url: null,
     },
   );
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
+      return;
+    }
+    const { data: userRes } = await supabase.auth.getUser();
+    const uid = userRes.user?.id;
+    if (!uid) {
+      toast.error("Not signed in");
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `${uid}/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("task-images")
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (upErr) {
+      setUploading(false);
+      toast.error(upErr.message);
+      return;
+    }
+    const { data: pub } = supabase.storage.from("task-images").getPublicUrl(path);
+    update("image_url", pub.publicUrl);
+    setUploading(false);
+    toast.success("Image uploaded");
+  };
 
   const update = <K extends keyof TaskFormValues>(k: K, v: TaskFormValues[K]) =>
     setValues((p) => ({ ...p, [k]: v }));
@@ -55,6 +88,7 @@ export function TaskForm({ initial }: { initial?: TaskFormValues }) {
       priority: values.priority,
       category: values.category.trim().slice(0, 50) || "General",
       done: values.done,
+      image_url: values.image_url ?? null,
     };
     let error;
     if (isEdit && values.id) {
@@ -154,6 +188,36 @@ export function TaskForm({ initial }: { initial?: TaskFormValues }) {
             placeholder="Work, Personal, Health..."
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="image">Image (optional)</Label>
+        <Input
+          id="image"
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          disabled={uploading}
+        />
+        {uploading && <p className="text-xs text-muted-foreground">Uploading...</p>}
+        {values.image_url && (
+          <div className="mt-2">
+            <img
+              src={values.image_url}
+              alt="Task"
+              className="max-h-48 rounded-md border border-border object-cover"
+            />
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="mt-2"
+              onClick={() => update("image_url", null)}
+            >
+              Remove image
+            </Button>
+          </div>
+        )}
       </div>
 
       <label className="flex items-center gap-2 text-sm">
