@@ -119,20 +119,3 @@ export const postTaskToFacebook = createServerFn({ method: "POST" })
 
     return { ok: true, postId: newPostId ?? task.fb_post_id, updated: isUpdate };
   });
-
-    const res = await fetch(url, { method: "POST", body });
-    const json = (await res.json()) as { id?: string; error?: { message: string } };
-    if (!res.ok || json.error) {
-      throw new Error(json.error?.message ?? `Facebook API error (${res.status})`);
-    }
-
-    if (!isUpdate && json.id) {
-      const { error: uErr } = await supabase
-        .from("tasks")
-        .update({ fb_post_id: json.id })
-        .eq("id", task.id);
-      if (uErr) throw new Error(uErr.message);
-    }
-
-    return { ok: true, postId: json.id ?? task.fb_post_id, updated: isUpdate };
-  });
