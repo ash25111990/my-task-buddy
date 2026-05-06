@@ -88,6 +88,7 @@ export function TaskForm({ initial }: { initial?: TaskFormValues }) {
       priority: values.priority,
       category: values.category.trim().slice(0, 50) || "General",
       done: values.done,
+      image_url: values.image_url ?? null,
     };
     let error;
     if (isEdit && values.id) {
