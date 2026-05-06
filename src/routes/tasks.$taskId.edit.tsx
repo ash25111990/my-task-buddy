@@ -72,6 +72,7 @@ function EditTaskPage() {
           priority: data.priority as "low" | "medium" | "high",
           category: data.category,
           done: data.done,
+          image_url: data.image_url ?? null,
         });
       });
   }, [taskId]);
