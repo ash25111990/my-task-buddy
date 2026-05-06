@@ -21,6 +21,7 @@ export type TaskFormValues = {
   priority: "low" | "medium" | "high";
   category: string;
   done: boolean;
+  image_url?: string | null;
 };
 
 export function TaskForm({ initial }: { initial?: TaskFormValues }) {
