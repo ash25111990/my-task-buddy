@@ -1,11 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { attachSupabaseAuth } from "@/integrations/supabase/auth-client-middleware";
 import { z } from "zod";
 
 const GRAPH = "https://graph.facebook.com/v21.0";
 
 export const getFacebookConnection = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
     const { data, error } = await supabase
@@ -23,7 +24,7 @@ const credsSchema = z.object({
 
 // Save just the App ID + Secret. Page token is acquired during OAuth callback.
 export const saveFacebookApp = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .inputValidator((d: unknown) => credsSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -41,7 +42,7 @@ export const saveFacebookApp = createServerFn({ method: "POST" })
   });
 
 export const disconnectFacebook = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const { error } = await supabase
@@ -53,7 +54,7 @@ export const disconnectFacebook = createServerFn({ method: "POST" })
   });
 
 export const postTaskToFacebook = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .inputValidator((d: { taskId: string }) =>
     z.object({ taskId: z.string().uuid() }).parse(d),
   )
