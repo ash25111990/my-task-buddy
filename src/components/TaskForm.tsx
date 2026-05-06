@@ -35,9 +35,41 @@ export function TaskForm({ initial }: { initial?: TaskFormValues }) {
       priority: "medium",
       category: "General",
       done: false,
+      image_url: null,
     },
   );
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
+      return;
+    }
+    const { data: userRes } = await supabase.auth.getUser();
+    const uid = userRes.user?.id;
+    if (!uid) {
+      toast.error("Not signed in");
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `${uid}/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("task-images")
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (upErr) {
+      setUploading(false);
+      toast.error(upErr.message);
+      return;
+    }
+    const { data: pub } = supabase.storage.from("task-images").getPublicUrl(path);
+    update("image_url", pub.publicUrl);
+    setUploading(false);
+    toast.success("Image uploaded");
+  };
 
   const update = <K extends keyof TaskFormValues>(k: K, v: TaskFormValues[K]) =>
     setValues((p) => ({ ...p, [k]: v }));
