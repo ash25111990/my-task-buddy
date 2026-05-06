@@ -190,6 +190,36 @@ export function TaskForm({ initial }: { initial?: TaskFormValues }) {
         </div>
       </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="image">Image (optional)</Label>
+        <Input
+          id="image"
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          disabled={uploading}
+        />
+        {uploading && <p className="text-xs text-muted-foreground">Uploading...</p>}
+        {values.image_url && (
+          <div className="mt-2">
+            <img
+              src={values.image_url}
+              alt="Task"
+              className="max-h-48 rounded-md border border-border object-cover"
+            />
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="mt-2"
+              onClick={() => update("image_url", null)}
+            >
+              Remove image
+            </Button>
+          </div>
+        )}
+      </div>
+
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
