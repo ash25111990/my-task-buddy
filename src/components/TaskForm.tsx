@@ -56,9 +56,19 @@ export function TaskForm({ initial }: { initial?: TaskFormValues }) {
       category: values.category.trim().slice(0, 50) || "General",
       done: values.done,
     };
-    const { error } = isEdit && values.id
-      ? await supabase.from("tasks").update(payload).eq("id", values.id)
-      : await supabase.from("tasks").insert(payload);
+    let error;
+    if (isEdit && values.id) {
+      ({ error } = await supabase.from("tasks").update(payload).eq("id", values.id));
+    } else {
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes.user?.id;
+      if (!uid) {
+        setSaving(false);
+        toast.error("Not signed in");
+        return;
+      }
+      ({ error } = await supabase.from("tasks").insert({ ...payload, user_id: uid }));
+    }
 
     setSaving(false);
     if (error) {
